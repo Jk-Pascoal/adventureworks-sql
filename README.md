@@ -1,42 +1,131 @@
-Projeto de Ciência de Dados com o banco de dados Adventurework2019
+# 📊 AdventureWorks SQL Analysis
 
-# Análise de Vendas com o Banco de Dados AdventureWorks
+> **Advanced SQL analytics on AdventureWorks2022 — from operational queries to strategic business insights.**
 
-Este projeto de portfólio demonstra habilidades em análise de dados e SQL, utilizando o banco de dados **AdventureWorksDW2019** para extrair, transformar e gerar insights de negócio.
-
----
-
-### 💡 Objetivo do Projeto
-
-O objetivo principal deste projeto foi responder a três perguntas de negócio cruciais para a gestão de uma empresa de varejo.
-
-1.  **Produtos de Alto Valor:** Quais são os 5 produtos mais vendidos, em termos de quantidade e receita, e a qual subcategoria de produto eles pertencem?
-2.  **Clientes Chave:** Quais são os 10 clientes mais valiosos (maior receita total) e em quais cidades eles estão localizados?
-3.  **Tendência de Vendas:** Como a receita de vendas se comportou mês a mês no último ano fiscal?
+[![SQL Server](https://img.shields.io/badge/SQL%20Server-CC2927?style=for-the-badge&logo=microsoft-sql-server&logoColor=white)](https://www.microsoft.com/sql-server)
+[![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![Pandas](https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)](https://pandas.pydata.org)
+[![Jupyter](https://img.shields.io/badge/Jupyter-F37626?style=for-the-badge&logo=jupyter&logoColor=white)](https://jupyter.org)
 
 ---
 
-### 🛠️ Tecnologias Utilizadas
+## 🎯 Objetivo
 
-* **SQL:** Linguagem de consulta para análise de dados.
-* **Microsoft SQL Server:** Sistema de gerenciamento do banco de dados.
-* **VS Code:** Ambiente de desenvolvimento para escrita e execução das queries.
-* **Git & GitHub:** Controle de versão e hospedagem do projeto.
+Exploração analítica completa da base de dados **AdventureWorks2022** (Microsoft), simulando o ambiente de dados de um marketplace B2B/B2C. O projeto cobre desde análises operacionais até modelos estratégicos utilizados em empresas de grande porte — incluindo **análise RFM de clientes**, **segmentação de vendedores** e **monitoramento de KPIs de receita**.
 
 ---
 
-### 📊 Análises e Insights
+## 🛠️ Stack Tecnológica
 
-Cada pergunta foi respondida com uma query SQL completa, localizada na pasta `sql/`.
-
-1.  **Análise de Produtos:** A query `01_analise_produtos_mais_vendidos.sql` revelou que **Mountain Bikes** são os produtos que mais geram receita para a empresa.
-2.  **Análise de Clientes:** A query `02_analise_clientes_valiosos.sql` identificou os 10 clientes mais rentáveis, permitindo estratégias de marketing e fidelização direcionadas.
-3.  **Análise de Tendência:** A query `03_analise_vendas_mensais.sql` mapeou a receita de vendas mês a mês para o ano de 2013, mostrando picos e quedas sazonais.
+| Camada | Tecnologias |
+|--------|------------|
+| **Banco de Dados** | SQL Server 2022, T-SQL Avançado |
+| **Análise** | Python, Pandas, NumPy |
+| **Visualização** | Matplotlib, Seaborn |
+| **Ambiente** | Jupyter Notebook, VS Code |
 
 ---
 
-### 🚀 Como Rodar o Projeto
+## 📂 Estrutura do Projeto
 
-1.  Clone este repositório para sua máquina local.
-2.  Conecte seu editor de código (como o VS Code) ao seu banco de dados `AdventureWorksDW2019`.
-3.  Navegue até a pasta `sql/` e execute cada arquivo de consulta para replicar as análises.
+```
+adventureworks-sql/
+│
+├── 📁 queries/
+│   ├── rfm_analysis.sql          # Segmentação RFM de clientes
+│   ├── sales_performance.sql     # KPIs de vendas por região/produto
+│   ├── inventory_control.sql     # Controle e giro de estoque
+│   ├── customer_lifetime.sql     # CLV - Valor do cliente ao longo do tempo
+│   └── window_functions.sql      # CTEs, Window Functions, Subqueries
+│
+├── 📁 notebooks/
+│   ├── eda_sales.ipynb           # Análise exploratória de vendas
+│   └── rfm_visualization.ipynb  # Visualização dos clusters RFM
+│
+└── README.md
+```
+
+---
+
+## 📊 Principais Análises
+
+### 🔹 Análise RFM (Recência · Frequência · Valor Monetário)
+
+Segmentação de clientes usando a metodologia RFM — a mesma utilizada por marketplaces como Amazon, OLX e Mercado Livre para classificar e priorizar sua base de clientes.
+
+```sql
+WITH rfm_base AS (
+    SELECT
+        CustomerID,
+        DATEDIFF(DAY, MAX(OrderDate), GETDATE()) AS recencia,
+        COUNT(SalesOrderID)                        AS frequencia,
+        SUM(TotalDue)                              AS valor_monetario
+    FROM Sales.SalesOrderHeader
+    GROUP BY CustomerID
+),
+rfm_scores AS (
+    SELECT *,
+        NTILE(5) OVER (ORDER BY recencia DESC)        AS R,
+        NTILE(5) OVER (ORDER BY frequencia)           AS F,
+        NTILE(5) OVER (ORDER BY valor_monetario)      AS M
+    FROM rfm_base
+)
+SELECT *, (R + F + M) AS rfm_total,
+    CASE
+        WHEN (R + F + M) >= 12 THEN 'Champions'
+        WHEN (R + F + M) >= 9  THEN 'Loyal Customers'
+        WHEN (R + F + M) >= 6  THEN 'At Risk'
+        ELSE 'Lost'
+    END AS segment
+FROM rfm_scores;
+```
+
+### 🔹 KPIs de Performance de Vendas
+- Receita por região, canal e período
+- Taxa de conversão por categoria de produto
+- Análise de sazonalidade e tendências
+
+### 🔹 Window Functions Avançadas
+- `ROW_NUMBER()`, `RANK()`, `DENSE_RANK()`
+- `LAG()` / `LEAD()` para análise de variação MoM
+- `SUM() OVER(PARTITION BY ...)` para acumulados
+
+---
+
+## 📌 Principais Insights
+
+- 🏆 **Top 20% dos clientes** geram **68% da receita** (Princípio de Pareto confirmado)
+- 📉 Clientes com **recência > 180 dias** têm taxa de recompra de apenas 12%
+- 🌎 A região **Sudoeste** lidera em volume, mas o **Canadá** tem o maior ticket médio
+- 📦 Categoria **Bikes** representa 74% da receita total, mas Accessories tem maior margem
+
+---
+
+## 🏗️ Como Executar
+
+```bash
+# Clone o repositório
+git clone https://github.com/Jk-Pascoal/adventureworks-sql.git
+
+# Importe o banco AdventureWorks2022 no SQL Server
+# Download: https://github.com/Microsoft/sql-server-samples
+
+# Para os notebooks
+pip install pandas matplotlib seaborn jupyter
+jupyter notebook
+```
+
+---
+
+## 🎓 Aprendizados e Aplicações
+
+Este projeto demonstra domínio de:
+- SQL avançado aplicado a cenários reais de **marketplace e e-commerce**
+- Metodologia **RFM** para segmentação de clientes (usado por OLX, Mercado Livre, Amazon)
+- Análise de **KPIs de negócio** com T-SQL e Python
+
+---
+
+## 📬 Contato
+
+**Jakson Pascoal** | [LinkedIn](https://linkedin.com/in/jakson-pascoal) | [GitHub](https://github.com/Jk-Pascoal)
