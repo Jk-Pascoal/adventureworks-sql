@@ -1,131 +1,167 @@
-# 📊 AdventureWorks SQL Analysis
+# AdventureWorks DW2019 — SQL e visualização
 
-> **Advanced SQL analytics on AdventureWorks2022 — from operational queries to strategic business insights.**
+Projeto de análise de vendas com o banco dimensional **AdventureWorksDW2019**, utilizando consultas T-SQL, integração entre Python e SQL Server e visualizações com Matplotlib.
 
-[![SQL Server](https://img.shields.io/badge/SQL%20Server-CC2927?style=for-the-badge&logo=microsoft-sql-server&logoColor=white)](https://www.microsoft.com/sql-server)
-[![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![Pandas](https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)](https://pandas.pydata.org)
-[![Jupyter](https://img.shields.io/badge/Jupyter-F37626?style=for-the-badge&logo=jupyter&logoColor=white)](https://jupyter.org)
+O repositório demonstra um fluxo inicial e reproduzível:
 
----
-
-## 🎯 Objetivo
-
-Exploração analítica completa da base de dados **AdventureWorks2022** (Microsoft), simulando o ambiente de dados de um marketplace B2B/B2C. O projeto cobre desde análises operacionais até modelos estratégicos utilizados em empresas de grande porte — incluindo **análise RFM de clientes**, **segmentação de vendedores** e **monitoramento de KPIs de receita**.
-
----
-
-## 🛠️ Stack Tecnológica
-
-| Camada | Tecnologias |
-|--------|------------|
-| **Banco de Dados** | SQL Server 2022, T-SQL Avançado |
-| **Análise** | Python, Pandas, NumPy |
-| **Visualização** | Matplotlib, Seaborn |
-| **Ambiente** | Jupyter Notebook, VS Code |
-
----
-
-## 📂 Estrutura do Projeto
-
+```text
+SQL Server → consulta analítica → DataFrame Pandas → gráfico
 ```
+
+---
+
+## Objetivo
+
+Responder perguntas comerciais a partir do modelo dimensional da Microsoft:
+
+- quais produtos geram maior quantidade vendida e receita?
+- quais clientes acumulam maior receita?
+- como a receita varia ao longo dos meses de 2013?
+
+---
+
+## Conteúdo implementado
+
+### Produtos mais vendidos
+
+O arquivo [`sql/01_analise_produtos_mais_vendidos.sql`](sql/01_analise_produtos_mais_vendidos.sql) combina:
+
+- `FactInternetSales`;
+- `DimProduct`;
+- `DimProductSubcategory`.
+
+A consulta agrega quantidade e receita, retornando os cinco produtos com maior receita total.
+
+### Clientes com maior receita
+
+O arquivo [`sql/02_analise_clientes_valiosos.sql`](sql/02_analise_clientes_valiosos.sql) combina:
+
+- `FactInternetSales`;
+- `DimCustomer`.
+
+A consulta retorna os dez clientes com maior receita agregada, incluindo atributos de educação e ocupação.
+
+### Visualização com Python
+
+O script [`data_viz/analise_viz.py`](data_viz/analise_viz.py):
+
+1. conecta ao SQL Server com `pyodbc`;
+2. executa consultas com `pandas.read_sql`;
+3. cria gráficos de produtos, clientes e vendas mensais;
+4. salva as visualizações na pasta `images/`.
+
+---
+
+## Estrutura real do repositório
+
+```text
 adventureworks-sql/
-│
-├── 📁 queries/
-│   ├── rfm_analysis.sql          # Segmentação RFM de clientes
-│   ├── sales_performance.sql     # KPIs de vendas por região/produto
-│   ├── inventory_control.sql     # Controle e giro de estoque
-│   ├── customer_lifetime.sql     # CLV - Valor do cliente ao longo do tempo
-│   └── window_functions.sql      # CTEs, Window Functions, Subqueries
-│
-├── 📁 notebooks/
-│   ├── eda_sales.ipynb           # Análise exploratória de vendas
-│   └── rfm_visualization.ipynb  # Visualização dos clusters RFM
-│
+├── data_viz/
+│   └── analise_viz.py
+├── images/
+├── sql/
+│   ├── 01_analise_produtos_mais_vendidos.sql
+│   └── 02_analise_clientes_valiosos.sql
 └── README.md
 ```
 
 ---
 
-## 📊 Principais Análises
+## Tecnologias
 
-### 🔹 Análise RFM (Recência · Frequência · Valor Monetário)
-
-Segmentação de clientes usando a metodologia RFM — a mesma utilizada por marketplaces como Amazon, OLX e Mercado Livre para classificar e priorizar sua base de clientes.
-
-```sql
-WITH rfm_base AS (
-    SELECT
-        CustomerID,
-        DATEDIFF(DAY, MAX(OrderDate), GETDATE()) AS recencia,
-        COUNT(SalesOrderID)                        AS frequencia,
-        SUM(TotalDue)                              AS valor_monetario
-    FROM Sales.SalesOrderHeader
-    GROUP BY CustomerID
-),
-rfm_scores AS (
-    SELECT *,
-        NTILE(5) OVER (ORDER BY recencia DESC)        AS R,
-        NTILE(5) OVER (ORDER BY frequencia)           AS F,
-        NTILE(5) OVER (ORDER BY valor_monetario)      AS M
-    FROM rfm_base
-)
-SELECT *, (R + F + M) AS rfm_total,
-    CASE
-        WHEN (R + F + M) >= 12 THEN 'Champions'
-        WHEN (R + F + M) >= 9  THEN 'Loyal Customers'
-        WHEN (R + F + M) >= 6  THEN 'At Risk'
-        ELSE 'Lost'
-    END AS segment
-FROM rfm_scores;
-```
-
-### 🔹 KPIs de Performance de Vendas
-- Receita por região, canal e período
-- Taxa de conversão por categoria de produto
-- Análise de sazonalidade e tendências
-
-### 🔹 Window Functions Avançadas
-- `ROW_NUMBER()`, `RANK()`, `DENSE_RANK()`
-- `LAG()` / `LEAD()` para análise de variação MoM
-- `SUM() OVER(PARTITION BY ...)` para acumulados
+| Camada | Tecnologia |
+|---|---|
+| Banco de dados | SQL Server |
+| Linguagem SQL | T-SQL |
+| Conexão | PyODBC / ODBC Driver 17 |
+| Análise | Python e Pandas |
+| Visualização | Matplotlib |
+| Modelo de dados | AdventureWorksDW2019 |
 
 ---
 
-## 📌 Principais Insights
+## Conceitos demonstrados
 
-- 🏆 **Top 20% dos clientes** geram **68% da receita** (Princípio de Pareto confirmado)
-- 📉 Clientes com **recência > 180 dias** têm taxa de recompra de apenas 12%
-- 🌎 A região **Sudoeste** lidera em volume, mas o **Canadá** tem o maior ticket médio
-- 📦 Categoria **Bikes** representa 74% da receita total, mas Accessories tem maior margem
+- consultas em modelo dimensional;
+- relacionamento entre fatos e dimensões;
+- `JOIN`, `GROUP BY`, `SUM`, `TOP` e `ORDER BY`;
+- agregação de métricas de vendas;
+- conexão Python–SQL Server;
+- transformação do resultado SQL em DataFrame;
+- visualização de indicadores comerciais.
 
 ---
 
-## 🏗️ Como Executar
+## Como executar
+
+### 1. Preparar o banco
+
+Restaure o banco **AdventureWorksDW2019** em uma instância do SQL Server.
+
+### 2. Clonar o projeto
 
 ```bash
-# Clone o repositório
 git clone https://github.com/Jk-Pascoal/adventureworks-sql.git
+cd adventureworks-sql
+```
 
-# Importe o banco AdventureWorks2022 no SQL Server
-# Download: https://github.com/Microsoft/sql-server-samples
+### 3. Instalar dependências
 
-# Para os notebooks
-pip install pandas matplotlib seaborn jupyter
-jupyter notebook
+```bash
+pip install pandas matplotlib pyodbc
+```
+
+Também é necessário instalar o **ODBC Driver 17 for SQL Server**.
+
+### 4. Configurar a conexão
+
+No arquivo `data_viz/analise_viz.py`, substitua os valores locais:
+
+```python
+server = "SEU_SERVIDOR"
+database = "AdventureWorksDW2019"
+```
+
+A configuração atual utiliza autenticação integrada do Windows:
+
+```text
+Trusted_Connection=yes
+```
+
+### 5. Criar a pasta de saída e executar
+
+```bash
+mkdir images
+python data_viz/analise_viz.py
 ```
 
 ---
 
-## 🎓 Aprendizados e Aplicações
+## Limitações atuais
 
-Este projeto demonstra domínio de:
-- SQL avançado aplicado a cenários reais de **marketplace e e-commerce**
-- Metodologia **RFM** para segmentação de clientes (usado por OLX, Mercado Livre, Amazon)
-- Análise de **KPIs de negócio** com T-SQL e Python
+- servidor e banco ainda são configurados diretamente no script;
+- não há arquivo `requirements.txt`;
+- as consultas não possuem testes automatizados;
+- a ordenação mensal usa o nome do mês e deve evoluir para uma chave numérica;
+- resultados dependem da versão e do conteúdo local do banco restaurado;
+- análise RFM, segmentação e CLV ainda não estão implementadas neste repositório.
+
+As limitações são apresentadas explicitamente para separar o que já está reproduzível do roadmap futuro.
 
 ---
 
-## 📬 Contato
+## Próximas evoluções
 
-**Jakson Pascoal** | [LinkedIn](https://linkedin.com/in/jakson-pascoal) | [GitHub](https://github.com/Jk-Pascoal)
+- mover a configuração de conexão para variáveis de ambiente;
+- adicionar `requirements.txt`;
+- ordenar a série mensal por número do mês;
+- ampliar a biblioteca de consultas;
+- implementar análise RFM como etapa independente e reproduzível;
+- criar testes básicos para as consultas e transformações;
+- publicar um painel com os resultados.
+
+---
+
+## Autor
+
+**Jakson Pascoal** — [GitHub](https://github.com/Jk-Pascoal)
